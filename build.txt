@@ -1,0 +1,1171 @@
+Step 1 : FROM ubuntu:16.04
+ ---> cf62323fa025
+Step 2 : MAINTAINER Jason Rivers <jason@jasonrivers.co.uk>
+ ---> Using cache
+ ---> d5ec912c3f05
+Step 3 : ENV NAGIOS_HOME /opt/nagios
+ ---> Using cache
+ ---> fff7cc4fe72a
+Step 4 : ENV NAGIOS_USER nagios
+ ---> Using cache
+ ---> 3bec13b698d3
+Step 5 : ENV NAGIOS_GROUP nagios
+ ---> Using cache
+ ---> f735d1b35f4e
+Step 6 : ENV NAGIOS_CMDUSER nagios
+ ---> Using cache
+ ---> 2f1e1efee0d6
+Step 7 : ENV NAGIOS_CMDGROUP nagios
+ ---> Using cache
+ ---> de2785af1acd
+Step 8 : ENV NAGIOSADMIN_USER nagiosadmin
+ ---> Using cache
+ ---> 80cd78263c79
+Step 9 : ENV NAGIOSADMIN_PASS nagios
+ ---> Using cache
+ ---> b0169ed765fa
+Step 10 : ENV APACHE_RUN_USER nagios
+ ---> Using cache
+ ---> beb6a19eb78c
+Step 11 : ENV APACHE_RUN_GROUP nagios
+ ---> Using cache
+ ---> c409c90e1a40
+Step 12 : ENV NAGIOS_TIMEZONE UTC
+ ---> Using cache
+ ---> 9241df2a0bb5
+Step 13 : ENV DEBIAN_FRONTEND noninteractive
+ ---> Using cache
+ ---> 1cb88b262061
+Step 14 : ENV NG_NAGIOS_CONFIG_FILE ${NAGIOS_HOME}/etc/nagios.cfg
+ ---> Using cache
+ ---> 4c0246a7e301
+Step 15 : ENV NG_CGI_DIR ${NAGIOS_HOME}/sbin
+ ---> Using cache
+ ---> 48a249785279
+Step 16 : ENV NG_WWW_DIR ${NAGIOS_HOME}/share/nagiosgraph
+ ---> Using cache
+ ---> 021003ccca57
+Step 17 : ENV NG_CGI_URL /cgi-bin
+ ---> Using cache
+ ---> e2abababb15f
+Step 18 : RUN sed -i 's/universe/universe multiverse/' /etc/apt/sources.list	;	apt-get update && apt-get install -y						iputils-ping								netcat									build-essential								automake								autoconf								gettext									m4									gperf									snmp									snmpd									snmp-mibs-downloader							php-cli									php-gd									libgd2-xpm-dev								apache2									apache2-utils								libapache2-mod-php							runit									unzip									bc									postfix									bsd-mailx								libnet-snmp-perl							git									libssl-dev								libcgi-pm-perl								librrds-perl								libgd-gd2-perl								libnagios-object-perl							fping									libfreeradius-client-dev						libnet-snmp-perl							libnet-xmpp-perl							parallel					&&			apt-get clean
+ ---> Using cache
+ ---> e63ab512366e
+Step 19 : RUN ( egrep -i "^${NAGIOS_GROUP}"    /etc/group || groupadd $NAGIOS_GROUP    )				&&		( egrep -i "^${NAGIOS_CMDGROUP}" /etc/group || groupadd $NAGIOS_CMDGROUP )
+ ---> Using cache
+ ---> 0ec133328d1b
+Step 20 : RUN ( id -u $NAGIOS_USER    || useradd --system -d $NAGIOS_HOME -g $NAGIOS_GROUP    $NAGIOS_USER    )	&&		( id -u $NAGIOS_CMDUSER || useradd --system -d $NAGIOS_HOME -g $NAGIOS_CMDGROUP $NAGIOS_CMDUSER )
+ ---> Using cache
+ ---> 59e5ffd219c6
+Step 21 : RUN cd /tmp							&&		git clone https://github.com/multiplay/qstat.git	&&		cd qstat						&&		./autogen.sh						&&		./configure						&&		make							&&		make install						&&		make clean
+ ---> Using cache
+ ---> a4a5faadb466
+Step 22 : RUN cd /tmp							&&		git clone https://github.com/NagiosEnterprises/nagioscore.git		&&		cd nagioscore						&&		git checkout tags/nagios-4.1.1				&&		./configure									--prefix=${NAGIOS_HOME}							--exec-prefix=${NAGIOS_HOME}						--enable-event-broker							--with-nagios-command-user=${NAGIOS_CMDUSER}				--with-command-group=${NAGIOS_CMDGROUP}					--with-nagios-user=${NAGIOS_USER}					--with-nagios-group=${NAGIOS_GROUP}		&&		make all						&&		make install						&&		make install-config					&&		make install-commandmode				&&		cp sample-config/httpd.conf /etc/apache2/conf-available/nagios.conf	&&		ln -s /etc/apache2/conf-available/nagios.conf /etc/apache2/conf-enabled/nagios.conf		&&		make clean
+ ---> Using cache
+ ---> 5198b525939d
+Step 23 : ADD patches/check_game.patch /tmp/
+ ---> Using cache
+ ---> dcd57a3b5699
+Step 24 : RUN cd /tmp							&&		git clone https://github.com/nagios-plugins/nagios-plugins.git		&&		cd nagios-plugins					&&		git checkout tags/release-2.1.1				&&		patch ./plugins/check_game.c /tmp/check_game.patch	&&		./tools/setup						&&		./configure									--prefix=${NAGIOS_HOME}				&&		make							&&		make install						&&		make clean
+ ---> Using cache
+ ---> 2bb6a45d11fb
+Step 25 : RUN cd /tmp							&&		git clone https://github.com/NagiosEnterprises/nrpe.git	&&		cd nrpe							&&		git checkout tags/nrpe-2-15				&&		./configure									--with-ssl=/usr/bin/openssl						--with-ssl-lib=/usr/lib/x86_64-linux-gnu	&&		make check_nrpe						&&		cp src/check_nrpe ${NAGIOS_HOME}/libexec/		&&		make clean
+ ---> Using cache
+ ---> 00731733117a
+Step 26 : RUN cd /tmp											&&		git clone http://git.code.sf.net/p/nagiosgraph/git nagiosgraph				&&		cd nagiosgraph										&&		./install.pl --install												--prefix /opt/nagiosgraph										--nagios-user ${NAGIOS_USER}										--www-user ${NAGIOS_USER}										--nagios-perfdata-file ${NAGIOS_HOME}/var/perfdata.log							--nagios-cgi-url /cgi-bin							&&		cp share/nagiosgraph.ssi ${NAGIOS_HOME}/share/ssi/common-header.ssi
+ ---> Using cache
+ ---> 86173812904b
+Step 27 : RUN cd /opt &&			git clone https://github.com/willixix/WL-NagiosPlugins.git	WL-Nagios-Plugins	&&		git clone https://github.com/JasonRivers/nagios-plugins.git	JR-Nagios-Plugins	&&		git clone https://github.com/justintime/nagios-plugins.git      JE-Nagios-Plugins       &&      	chmod +x /opt/WL-Nagios-Plugins/check*                                                  &&      	chmod +x /opt/JE-Nagios-Plugins/check_mem/check_mem.pl                                  &&      	cp /opt/JE-Nagios-Plugins/check_mem/check_mem.pl /opt/nagios/libexec/                   &&      	cp /opt/nagios/libexec/utils.sh /opt/JR-Nagios-Plugins/
+ ---> Using cache
+ ---> 497f80079c4c
+Step 28 : RUN sed -i.bak 's/.*\=www\-data//g' /etc/apache2/envvars
+ ---> Using cache
+ ---> 5cff0abf9b61
+Step 29 : RUN export DOC_ROOT="DocumentRoot $(echo $NAGIOS_HOME/share)"					&&		sed -i "s,DocumentRoot.*,$DOC_ROOT," /etc/apache2/sites-enabled/000-default.conf		&&		sed -i "s,</VirtualHost>,<IfDefine ENABLE_USR_LIB_CGI_BIN>\nScriptAlias /cgi-bin/ /opt/nagios/sbin/\n</IfDefine>\n</VirtualHost>," /etc/apache2/sites-enabled/000-default.conf	&&		ln -s /etc/apache2/mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+ ---> Using cache
+ ---> 117f39121c85
+Step 30 : RUN mkdir -p /usr/share/snmp/mibs								&&		mkdir -p ${NAGIOS_HOME}/etc/conf.d							&&		mkdir -p ${NAGIOS_HOME}/etc/monitor							&&		mkdir -p ${NAGIOS_HOME}/.ssh								&&		chown ${NAGIOS_USER}:${NAGIOS_GROUP} ${NAGIOS_HOME}/.ssh				&&		chmod 700 ${NAGIOS_HOME}/.ssh								&&		chmod 0755 /usr/share/snmp/mibs								&&		touch /usr/share/snmp/mibs/.foo								&&		ln -s /usr/share/snmp/mibs ${NAGIOS_HOME}/libexec/mibs					&&		ln -s ${NAGIOS_HOME}/bin/nagios /usr/local/bin/nagios					&&		echo "use_timezone=$NAGIOS_TIMEZONE" >> ${NAGIOS_HOME}/etc/nagios.cfg			&&		echo "SetEnv TZ \"${NAGIOS_TIMEZONE}\"" >> /etc/apache2/conf-enabled/nagios.conf	&&		echo "cfg_dir=${NAGIOS_HOME}/etc/conf.d" >> ${NAGIOS_HOME}/etc/nagios.cfg		&&		echo "cfg_dir=${NAGIOS_HOME}/etc/monitor" >> ${NAGIOS_HOME}/etc/nagios.cfg		&&		download-mibs && echo "mibs +ALL" > /etc/snmp/snmp.conf
+ ---> Using cache
+ ---> adec4e0e0720
+Step 31 : RUN sed -i 's,/bin/mail,/usr/bin/mail,' /opt/nagios/etc/objects/commands.cfg		&&		sed -i 's,/usr/usr,/usr,'           /opt/nagios/etc/objects/commands.cfg
+ ---> Using cache
+ ---> c38c7aa5ab88
+Step 32 : RUN cp /etc/services /var/spool/postfix/etc/
+ ---> Using cache
+ ---> 4f9bf9360990
+Step 33 : RUN rm -rf /etc/sv/getty-5
+ ---> Using cache
+ ---> 03e71dd0fd97
+Step 34 : ADD nagios/nagios.cfg /opt/nagios/etc/nagios.cfg
+ ---> Using cache
+ ---> d3d7b870816d
+Step 35 : ADD nagios/cgi.cfg /opt/nagios/etc/cgi.cfg
+ ---> Using cache
+ ---> a66dfe394d8c
+Step 36 : ADD nagios/templates.cfg /opt/nagios/etc/objects/templates.cfg
+ ---> Using cache
+ ---> 8f09bab19db6
+Step 37 : ADD nagios/commands.cfg /opt/nagios/etc/objects/commands.cfg
+ ---> Using cache
+ ---> 85c4ab3a753a
+Step 38 : ADD nagios/rules.cfg /opt/nagios/etc/objects/rules.cfg
+ ---> Using cache
+ ---> 2e55b3db3ef6
+Step 39 : ADD nagios.init /etc/sv/nagios/run
+ ---> Using cache
+ ---> 306344154122
+Step 40 : ADD apache.init /etc/sv/apache/run
+ ---> Using cache
+ ---> 31692f10f46c
+Step 41 : ADD postfix.init /etc/sv/postfix/run
+ ---> Using cache
+ ---> 91fce979341c
+Step 42 : ADD start.sh /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> f7a2de4a98ae
+Step 43 : RUN chmod +x /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> 4fb4961f299a
+Step 44 : RUN ln -s /etc/sv/* /etc/service
+ ---> Using cache
+ ---> 9e18da8f4802
+Step 45 : ENV APACHE_LOCK_DIR /var/run
+ ---> Using cache
+ ---> 545506cba82d
+Step 46 : ENV APACHE_LOG_DIR /var/log/apache2
+ ---> Using cache
+ ---> c5a3b04b65ef
+Step 47 : EXPOSE 80
+ ---> Using cache
+ ---> 8b3e696032fc
+Step 48 : VOLUME "/opt/nagios/var" "/opt/nagios/etc" "/opt/nagios/libexec" "/var/log/apache2" "/usr/share/snmp/mibs" "/opt/Custom-Nagios-Plugins"
+ ---> Using cache
+ ---> b99b221712db
+Step 49 : CMD /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> 52bd16d1fe4c
+Successfully built 52bd16d1fe4c
+Step 1 : FROM elasticsearch:2.3.1
+ ---> 68577e26e345
+Step 2 : RUN ./bin/plugin install mobz/elasticsearch-head
+ ---> Using cache
+ ---> 6c6a6c24692f
+Successfully built 6c6a6c24692f
+Step 1 : FROM debian:jessie
+ ---> 1b088884749b
+Step 2 : MAINTAINER mlacerda@ciandt.com
+ ---> Using cache
+ ---> a9a976d09b9f
+Step 3 : ENV SET_CONTAINER_TIMEZONE false
+ ---> Using cache
+ ---> a408a74c5687
+Step 4 : ENV CONTAINER_TIMEZONE America/Los_Angeles
+ ---> Using cache
+ ---> ed51e465024d
+Step 5 : ENV ELASTALERT_VERSION 0.0.75
+ ---> Using cache
+ ---> cf69d821afe4
+Step 6 : ENV ELASTALERT_URL https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz
+ ---> Using cache
+ ---> 36dc619e7949
+Step 7 : ENV ELASTALERT_HOME /opt/elastalert
+ ---> Using cache
+ ---> 382fad3391b1
+Step 8 : ENV RULES_DIRECTORY /opt/elastalert/rules
+ ---> Using cache
+ ---> 541e82eb2d46
+Step 9 : ENV ELASTICSEARCH_URL http://witix-elasticsearch:9200
+ ---> Using cache
+ ---> 59d240d5aea0
+Step 10 : ENV ELASTICSEARCH_HOST http://witix-elasticsearch
+ ---> Using cache
+ ---> 331462cfd869
+Step 11 : ENV ELASTICSEARCH_PORT 9200
+ ---> Using cache
+ ---> 85ac0a14886c
+Step 12 : ENV ELASTICSEARCH_USERNAME ""
+ ---> Using cache
+ ---> d5d2cf9c5019
+Step 13 : ENV ELASTICSEARCH_PASSWORD ""
+ ---> Using cache
+ ---> 309670169edd
+Step 14 : RUN apt-get update
+ ---> Using cache
+ ---> ebe913bd9efa
+Step 15 : RUN apt-get -y install curl
+ ---> Using cache
+ ---> 3534c7354ce9
+Step 16 : RUN apt-get install tar python-dev build-essential tzdata -y
+ ---> Using cache
+ ---> 9776ec5b10d2
+Step 17 : RUN curl -Lo get-pip.py https://bootstrap.pypa.io/get-pip.py &&     python get-pip.py &&     rm get-pip.py
+ ---> Using cache
+ ---> 5a34e3ce71b2
+Step 18 : RUN mkdir -p /opt/elastalert
+ ---> Using cache
+ ---> 2a7bbec72a5b
+Step 19 : RUN curl -Lo elastalert.tar.gz ${ELASTALERT_URL} &&     tar xvf *.tar.gz -C ${ELASTALERT_HOME} --strip-components 1 &&     rm *.tar.gz
+ ---> Using cache
+ ---> 1785b42ad167
+Step 20 : WORKDIR /opt/elastalert
+ ---> Using cache
+ ---> ec1a48ea94d7
+Step 21 : RUN mkdir rules
+ ---> Using cache
+ ---> 885debd40b65
+Step 22 : COPY ./conf/config.yaml /opt/elastalert/
+ ---> Using cache
+ ---> bb70f84f17ed
+Step 23 : COPY ./conf/rules/*.yaml /opt/elastalert/rules/
+ ---> Using cache
+ ---> d7a4f544c48c
+Step 24 : RUN python setup.py install &&     pip install -e .
+ ---> Using cache
+ ---> 3522d08918df
+Step 25 : COPY ./init-elastalert.sh /init-elastalert.sh
+ ---> Using cache
+ ---> 31c68ccadaa9
+Step 26 : RUN chmod +x /init-elastalert.sh
+ ---> Using cache
+ ---> 77b24040ffad
+Step 27 : RUN sed -i 's/\r$//' /init-elastalert.sh
+ ---> Using cache
+ ---> 106de0b82f70
+Step 28 : RUN curl -Lo elastalert.tar.gz ${ELASTALERT_URL} &&     tar xvf *.tar.gz -C ${ELASTALERT_HOME} --strip-components 1 &&     rm *.tar.gz
+ ---> Using cache
+ ---> f30ac9db7c94
+Step 29 : CMD /init-elastalert.sh
+ ---> Using cache
+ ---> 285473908e6e
+Successfully built 285473908e6e
+Step 1 : FROM nginx
+ ---> 0d409d33b27e
+Step 2 : COPY nginx.conf /etc/nginx/nginx.conf
+ ---> Using cache
+ ---> 826e13ee0430
+Step 3 : COPY .htpasswd /etc/nginx/.htpasswd
+ ---> Using cache
+ ---> f03260721241
+Successfully built f03260721241
+Step 1 : FROM kibana:4.5
+ ---> a56105e8ee1d
+Step 2 : MAINTAINER mlacerda@ciandt.com
+ ---> Using cache
+ ---> 322ef12e4b61
+Step 3 : RUN apt-get update
+ ---> Using cache
+ ---> b33b1089949e
+Step 4 : RUN apt-get -y install curl
+ ---> Using cache
+ ---> 0ae85e034fc1
+Step 5 : COPY ./conf/kibana.yml /opt/kibana/config/kibana.yml
+ ---> Using cache
+ ---> 61532e167554
+Step 6 : RUN kibana plugin --install elastic/timelion
+ ---> Using cache
+ ---> daa4003bae95
+Step 7 : RUN kibana plugin --install elastic/sense
+ ---> Using cache
+ ---> 16a43802ae57
+Step 8 : COPY dashboards /tmp/dashboards/
+ ---> Using cache
+ ---> d1b4951711f4
+Step 9 : RUN chmod +x /tmp/dashboards/config_dashboards.sh
+ ---> Using cache
+ ---> d715afc5d842
+Step 10 : RUN sed -i -e 's/\r$//' /tmp/dashboards/config_dashboards.sh
+ ---> Using cache
+ ---> cd2b21ef51b5
+Step 11 : COPY templates /tmp/templates
+ ---> Using cache
+ ---> 8896dda8af2f
+Step 12 : RUN chmod +x /tmp/templates/config_templates.sh
+ ---> Using cache
+ ---> 13f2c7e1ad62
+Step 13 : RUN sed -i -e 's/\r$//' /tmp/templates/config_templates.sh
+ ---> Using cache
+ ---> 382ba406d8f4
+Step 14 : COPY docker-witix-entrypoint.sh /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 697281b1512f
+Step 15 : RUN chmod +x /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> e9396c36c2f9
+Step 16 : RUN sed -i -e 's/\r$//' /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 76b73c477902
+Step 17 : COPY check_elastic.sh /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 3e8c14777479
+Step 18 : RUN chmod +x /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 34e034921ceb
+Step 19 : RUN sed -i -e 's/\r$//' /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 67bd6c9cc8b4
+Step 20 : COPY witix-console.svg /opt/kibana/optimize/bundles/src/ui/public/images/kibana.svg
+ ---> Using cache
+ ---> 83b604bab1f5
+Step 21 : RUN chmod o+w /opt/kibana/optimize/.babelcache.json
+ ---> Using cache
+ ---> 3aa0b3433029
+Step 22 : ENTRYPOINT /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 5163f53ad2f5
+Step 23 : CMD kibana
+ ---> Using cache
+ ---> b2f86e9d4e23
+Successfully built b2f86e9d4e23
+Attaching to witixdocker_witix-elasticsearch_1, witixdocker_witix-elastalert_1, witixdocker_witix-kibana_1, witixdocker_witix-nagios_1, witixdocker_witix-nginx_1
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,035][WARN ][bootstrap                ] unable to install syscall filter: seccomp unavailable: your kernel is buggy and you should upgrade
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,200][INFO ][node                     ] [Belasco] version[2.3.1], pid[1], build[bd98092/2016-04-04T12:25:05Z]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,200][INFO ][node                     ] [Belasco] initializing ...
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,744][INFO ][plugins                  ] [Belasco] modules [reindex, lang-expression, lang-groovy], plugins [head], sites [head]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,767][INFO ][env                      ] [Belasco] using [1] data paths, mounts [[/usr/share/elasticsearch/data (/dev/sdb1)]], net usable_space [4.2gb], net total_space [19.5gb], spins? [possibly], types [ext4]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:12,767][INFO ][env                      ] [Belasco] heap size [990.7mb], compressed ordinary object pointers [true]
+[33mwitix-elastalert_1     |[0m Starting Alerting
+[33mwitix-elastalert_1     |[0m Waiting for Elasticsearch to startup
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m env http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Elastic server==> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Status do Servidor Elastic => -- off line --
+[35mwitix-nagios_1         |[0m Started runsvdir, PID is 7
+[35mwitix-nagios_1         |[0m 
+[35mwitix-nagios_1         |[0m Nagios Core 4.1.1
+[35mwitix-nagios_1         |[0m Copyright (c) 2009-present Nagios Core Development Team and Community Contributors
+[35mwitix-nagios_1         |[0m Copyright (c) 1999-2009 Ethan Galstad
+[35mwitix-nagios_1         |[0m Last Modified: 08-19-2015
+[35mwitix-nagios_1         |[0m License: GPL
+[35mwitix-nagios_1         |[0m 
+[35mwitix-nagios_1         |[0m Website: https://www.nagios.org
+[35mwitix-nagios_1         |[0m Nagios 4.1.1 starting... (PID=13)
+[35mwitix-nagios_1         |[0m Local time is Tue Jul 19 00:48:12 UTC 2016
+[35mwitix-nagios_1         |[0m nerd: Channel hostchecks registered successfully
+[35mwitix-nagios_1         |[0m nerd: Channel servicechecks registered successfully
+[35mwitix-nagios_1         |[0m nerd: Channel opathchecks registered successfully
+[35mwitix-nagios_1         |[0m nerd: Fully initialized and ready to rock!
+[35mwitix-nagios_1         |[0m wproc: Successfully registered manager as @wproc with query handler
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 18;pid=18
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 19;pid=19
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 21;pid=21
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 22;pid=22
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 23;pid=23
+[35mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 20;pid=20
+[35mwitix-nagios_1         |[0m Successfully launched command file worker with pid 24
+[35mwitix-nagios_1         |[0m AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 10.2.2.3. Set the 'ServerName' directive globally to suppress this message
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Elastic server==> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Status do Servidor Elastic => -- off line --
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:14,436][INFO ][node                     ] [Belasco] initialized
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:14,436][INFO ][node                     ] [Belasco] starting ...
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:14,505][INFO ][transport                ] [Belasco] publish_address {10.2.2.2:9300}, bound_addresses {[::]:9300}
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:14,510][INFO ][discovery                ] [Belasco] elasticsearch/fFbSzK4YQxqDCx3AyCDaXg
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Elastic server==> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Status do Servidor Elastic => -- off line --
+[33mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:17,596][INFO ][cluster.service          ] [Belasco] new_master {Belasco}{fFbSzK4YQxqDCx3AyCDaXg}{10.2.2.2}{10.2.2.2:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:17,640][INFO ][http                     ] [Belasco] publish_address {10.2.2.2:9200}, bound_addresses {[::]:9200}
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:17,641][INFO ][node                     ] [Belasco] started
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:17,693][INFO ][gateway                  ] [Belasco] recovered [2] indices into cluster_state
+[32mwitix-kibana_1         |[0m Elastic server==> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Status do Servidor Elastic => HTTP/1.1 200 OK
+[32mwitix-kibana_1         |[0m ELASTICSEARCH_URL ====> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m Loading dashboards to http://witix-elasticsearch:9200 in .kibana from
+[32mwitix-kibana_1         |[0m /tmp/dashboards
+[32mwitix-kibana_1         |[0m Loading search Database-SQLLentos:
+[33mwitix-elastalert_1     |[0m {
+[33mwitix-elastalert_1     |[0m   "name" : "Belasco",
+[33mwitix-elastalert_1     |[0m   "cluster_name" : "elasticsearch",
+[33mwitix-elastalert_1     |[0m   "version" : {
+[33mwitix-elastalert_1     |[0m     "number" : "2.3.1",
+[33mwitix-elastalert_1     |[0m     "build_hash" : "bd980929010aef404e7cb0843e61d0665269fc39",
+[33mwitix-elastalert_1     |[0m     "build_timestamp" : "2016-04-04T12:25:05Z",
+[33mwitix-elastalert_1     |[0m     "build_snapshot" : false,
+[33mwitix-elastalert_1     |[0m     "lucene_version" : "5.5.0"
+[33mwitix-elastalert_1     |[0m   },
+[33mwitix-elastalert_1     |[0m   "tagline" : "You Know, for Search"
+[33mwitix-elastalert_1     |[0m }
+[33mwitix-elastalert_1     |[0m Container timezone not modified
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[33mwitix-elastalert_1     |[0m Elastalert index already exists in Elasticsearch.
+[33mwitix-elastalert_1     |[0m Call pythong elastalert.elastalert
+[33mwitix-elastalert_1     |[0m INFO:elastalert:Starting up
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:18,789][INFO ][cluster.routing.allocation] [Belasco] Cluster health status changed from [RED] to [YELLOW] (reason: [shards started [[elastalert_status][1], [elastalert_status][1]] ...]).
+[33mwitix-elastalert_1     |[0m INFO:elastalert:Queried rule log_error from 2016-07-19 00:47 UTC to 2016-07-19 00:48 UTC: 0 hits
+[33mwitix-elastalert_1     |[0m INFO:elastalert:Ran log_error from 2016-07-19 00:47 UTC to 2016-07-19 00:48 UTC: 0 query hits, 0 matches, 0 alerts sent
+[33mwitix-elastalert_1     |[0m INFO:elastalert:Sleeping for 59 seconds
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   612    0     0  100   612      0   2794 --:--:-- --:--:-- --:--:--  2794100   753  100   141  100   612    161    702 --:--:-- --:--:-- --:--:--   702
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Database-SQLLentos","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Logging-Today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   665  100   136  100   529   6081  23655 --:--:-- --:--:-- --:--:-- 24045
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Logging-Today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Logging-TodayErrors:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1328  100   142  100  1186   7155  59763 --:--:-- --:--:-- --:--:-- 62421
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Logging-TodayErrors","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Logtrans-Today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   799  100   137  100   662   8355  40375 --:--:-- --:--:-- --:--:-- 41375
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Logtrans-Today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Metrics-Sessoes:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   681  100   138  100   543   8147  32058 --:--:-- --:--:-- --:--:-- 33937
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Metrics-Sessoes","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Request-Browser-NotSupported:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   871  100   151  100   720   9755  46517 --:--:-- --:--:-- --:--:-- 48000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Request-Browser-NotSupported","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search Request-Browser:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"search","_id":"Request-Browser","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   821  100   138  100   683   8395  41550 --:--:-- --:--:-- --:--:-- 42687
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading search Request-Today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   703  100   136  100   567   9409  39227 --:--:-- --:--:-- --:--:-- 40500
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"Request-Today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search RequestId-Today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   650  100   138  100   512  10060  37325 --:--:-- --:--:-- --:--:-- 39384
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"RequestId-Today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search RequestTrace-Logging:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   639  100   143  100   496  10781  37397 --:--:-- --:--:-- --:--:-- 35428100   639  100   143  100   496  10743  37265 --:--:-- --:--:-- --:--:-- 35428
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"RequestTrace-Logging","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search RequestTrace-Requests:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   686  100   144  100   542  10494  39498 --:--:-- --:--:-- --:--:-- 41692
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"RequestTrace-Requests","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search RequestTrace-RequestsJobs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"search","_id":"RequestTrace-RequestsJobs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   798  100   148  100   650  10989  48266 --:--:-- --:--:-- --:--:-- 50000
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading search RequestTrace-SQLs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   671  100   140  100   531   8878  33675 --:--:-- --:--:-- --:--:-- 35400
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"RequestTrace-SQLs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading search elastalert_status-query_all:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   687  100   150  100   537  10016  35859 --:--:-- --:--:-- --:--:-- 38357
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"search","_id":"elastalert_status-query_all","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   548  100   144  100   404  10749  30158 --:--:-- --:--:-- --:--:-- 31076
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Histogram-Count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   965  100   154  100   811  10798  56868 --:--:-- --:--:-- --:--:-- 57928
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Histogram-Count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Histogram-UPDATEVCV-PRD:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   912  100   162  100   750  11196  51834 --:--:-- --:--:-- --:--:-- 53571
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Histogram-UPDATEVCV-PRD","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-HistogramaLentidoes:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1037  100   158  100   879   5797  32254 --:--:-- --:--:-- --:--:-- 32555
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-HistogramaLentidoes","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Per-Request:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   763  100   150  100   613   8991  36746 --:--:-- --:--:-- --:--:-- 38312
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Per-Request","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-PieChart-SqlCount:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Database-PieChart-SqlCount","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   775  100   156  100   619   5712  22668 --:--:-- --:--:-- --:--:-- 22925
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Database-Response-Time:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1131  100   152  100   979   6425  41383 --:--:-- --:--:-- --:--:-- 42565
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Response-Time","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-SQL-Lentos:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   501  100   149  100   352  13215  31219 --:--:-- --:--:-- --:--:-- 32000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-SQL-Lentos","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Slow-Requests-Sum-ElapsedTime:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   765  100   168  100   597   9621  34192 --:--:-- --:--:-- --:--:-- 35117
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-Slow-Requests-Sum-ElapsedTime","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-Slow-Requests:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Database-Slow-Requests","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   710  100   152  100   558   9611  35285 --:--:-- --:--:-- --:--:-- 37200
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Database-TableLentidoes:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   927  100   153  100   774   8968  45371 --:--:-- --:--:-- --:--:-- 48375
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-TableLentidoes","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-UPDATE-VCV-Tabela:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   718  100   156  100   562  12752  45941 --:--:-- --:--:-- --:--:-- 46833
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Database-UPDATE-VCV-Tabela","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Database-UPDATEVCV-PRD:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   852  100   152  100   700  10426  48017 --:--:-- --:-{"_index":".kibana","_type":"visualization","_id":"Database-UPDATEVCV-PRD","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}-:-- --:--:-- 50000
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Database-Usage-Per-Module:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1088  100   155  100   933   8424  50712 --:--:-- --:--:-- --{"_index":".kibana","_type":"visualization","_id":"Database-Usage-Per-Module","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}:--:-- 51833
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Histogram-SQL-Count-VALE-PRD:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   973  100   158  100   815  12307  63483 --:--:-- --:--:-- --:--:-- 67916
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Histogram-SQL-Count-VALE-PRD","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Histogram-SQL-Count-VALE-SERVICO-PRD:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   997  100   166  100   831  12636  63256 --:--:-- --:--:-- --:--:-- 63923{"_index":".kibana","_type":"visualization","_id":"Histogram-SQL-Count-VALE-SERVICO-PRD","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Histograma-LockException:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   895  100   154  100   741  15768  75875 --:--:-- --:--:-- --:{"_index":".kibana","_type":"visualization","_id":"Histograma-LockException","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}--:-- 82333
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Jobs-mais-executados:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     01{"_index":".kibana","_type":"visualization","_id":"Jobs-mais-executados","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}00   695  100   150  100   545  11638  42287 --:--:-- --:--:-- --:--:-- 45416
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Jobs-que-demoram-mais-de-5-minutos:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   919  100   164  100   755  10605  48826 --:--:-- --:--:-- --:--:-- 50333
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Jobs-que-demoram-mais-de-5-minutos","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization LBR-Analise-Distribuicao:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1139  100   154  100   985  12153  77736 --:--:-- --:--:-- --:--:-- 82083
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"LBR-Analise-Distribuicao","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Bar-Top10Func:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   895 {"_index":".kibana","_type":"visualization","_id":"Logging-Bar-Top10Func","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false} 100   151  100   744  12369  60948 --:--:-- --:--:-- --:--:-- 62000
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   681  100   143  100   538  11131  41877 --:--:-- --:--:-- --:--:-- 44833
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-Count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-DateHistogram-Count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     010{"_index":".kibana","_type":"visualization","_id":"Logging-DateHistogram-Count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}0   954  100   157  100   797  14382  73012 --:--:-- --:--:-- --:--:-- 79700
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Errors:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   754  100   144  100   610  10711  45376 --:--:-- --:--:-- --:--:-- 46923
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-Errors","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-ErrorsCount:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   703  100   149  100   554  12522  46558 --:--:-- --:--:-- --:--:-- 50363
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-ErrorsCount","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Histogram:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Logging-Histogram","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1068  100   147  100   921  12625  79103 --:--:-- --:--:-- --:--:-- 83727
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Metric.Unique.Message:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Logging-Metric.Unique.Message","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   604  100   159  100   445  12351  34568 --:--:-- --:--:-- --:--:-- 37083
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Metric.Unique.RequestId:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     010{"_index":".kibana","_type":"visualization","_id":"Logging-Metric.Unique.RequestId","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}0   610  100   161  100   449  12382  34533 --:--:-- --:--:-- --:--:-- 37416
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-MovimentacaoJob-Histograma:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1713  100   164  100  1549  13816   127k --:--:-- --:--:-- --:--:--  137k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-MovimentacaoJob-Histograma","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Pie-CountUsername:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Logging-Pie-CountUsername","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   769  100   155  100   614  13481  53405 --:--:-- --:--:-- --:--:-- 55818
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-PieEnvironment:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   903  100   152  100   751  11546  57049 --:--:-- --:--:-- --:--:-- 57769
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-PieEnvironment","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-PieErrorMovimentacao:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1362  100   158  100  1204  12221  93131 --:--:-- --:--:-- --:--:--   97k{"_index":".kibana","_type":"visualization","_id":"Logging-PieErrorMovimentacao","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-PieLevel:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1305  100   146  100  1159  11423  90681{"_index":".kibana","_type":"visualization","_id":"Logging-PieLevel","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false} --:--:-- --:--:-- --:--:-- 96583
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logging-PieUrl:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   890  100   144  100   746  12071  62536 --:--:-- --:--:-- --:--:-- 67818
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-PieUrl","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-TableLoggerName:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   902  100   153  100   749  12538  61383 --:--:-- --:--:-- --:--:-- 62416
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-TableLoggerName","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logging-Today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   943  100   143  100   800  11532  64516 --:--:-- --:--:-- --:--:-- 66666
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logging-Today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Loggins-Errors:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   754  100   144  100   610  12714  53858 --:--:-- --:--:-- --:--:-- 55454
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Loggins-Errors","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logtrans-Tempo-de-Resposta-(segs):
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Logtrans-Tempo-de-Resposta-(segs)","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1165  100   163  100  1002  14097  86663 --:--:-- --:--:-- --:--:-- 91090
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Logtrans-Top-Users:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   690  100   148  100   542  14495  53085 --:--:-- --:--:-- --:--:-- 54200
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logtrans-Top-Users","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logtrans-Transacoes-Mais-Utilizadas:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   736  100   165  100   571  12969  44882 --:--:-- --:--:-- --:--:-- 47583
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logtrans-Transacoes-Mais-Utilizadas","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Logtrans-Utilizacao-Por-Acao:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1037  100   158  100   879  12261  68213 --:--:-- --:--:-- --:--:-- 73250
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Logtrans-Utilizacao-Por-Acao","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Lote-não-existente-U058-Chart:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   599  100   164  100   435  15211  40348 --:--:-- --:--:-- --:--:-- 43500
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Lote-nￃﾣo-existente-U058-Chart","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Lote-não-existente-U058:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   529  100   158  100   371  12174  28586 --:--:-- --:--:-- --:--:-- 30916
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Lote-nￃﾣo-existente-U058","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-ActiveRequests:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1535  100   152  100  1383  11245    99k --:--:-- --:--:-- --:--:--  103k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Metrics-ActiveRequests","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-ActiveSessions:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1533  100   152  100  1381   9859  89582 --:--:-- --:--:-- --:--:-- 92066
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Metrics-ActiveSessions","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-ActiveTransactions:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1572  100   156  100  1416  12289   108k --:--:-- --:--:-- --:--:--  115k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Metrics-ActiveTransactions","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-AcumulativeGC:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1218  100   151  100  1067   9317  65839{"_index":".kibana","_type":"visualization","_id":"Metrics-AcumulativeGC","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false} --:--:-- --:--:-- --:--:-- 66687
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-CountGC:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1211  100   145  100  1066  10596  77901 --:--:-- --:--:-- --:--:-- 82000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Metrics-CountGC","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-JVM:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100{"_index":".kibana","_type":"visualization","_id":"Metrics-JVM","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}  1686  100   141  100  1545  10915   116k --:--:-- --:--:-- --:--:--  125k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Metrics-OS-CPU:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1229  100   144  100  1085   8398  63283 --:--:-- --:--:-- --:--:-- 63823
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Metrics-OS-CPU","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Quantidade-de-Execucao-de-Jobs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1041  100   160  100   881  12048  66340 --:--:-- --:--:-- --:--:-- 67769
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Quantidade-de-Execucao-de-Jobs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Bar-AverageExecutionTimeFunc:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   940  100   166  100   774   8456  39431 --:--:-- --:--:-- --:--:-- 40736
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Bar-AverageExecutionTimeFunc","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Browser-NotSupported:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   529  100   158  100   371  11994  28163 --:--:-- --:--:-- --:--:-- 28538
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Browser-NotSupported","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Browsers-NotSupported-Table:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-Browsers-NotSupported-Table","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1043  100   165  100   878  13205  70268 --:--:-- --:--:-- --:--:-- 73166
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-Browsers-PorServer:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-Browsers-PorServer","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1240  100   156  100  1084   8844  61454 --:--:-- --:--:-- --:--:-- 63764
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-Browsers:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   766  100   146  100   620  11318  48065 --:{"_index":".kibana","_type":"visualization","_id":"Request-Browsers","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}--:-- --:--:-- --:--:-- 51666
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-Count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   545  100   143  100   402  11167  31393 --:--:-- --:--:-- --:--:-- 33500
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-CountBigTrouble:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   594  100   153  100   441  12450  35885 --:--:-- --:--:-- --:--:-- 36750
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-CountBigTrouble","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-CountPorDia:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-CountPorDia","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   935  100   149  100   786  11423  60262 --:--:-- --:--:-- --:--:-- 65500
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-CountSlow:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   586  100   147  100   439  11292  33722 --:--:-- --:--:-- --:--:-- 36583
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-CountSlow","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-HistogramTempoResposta:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1157  100   160  100   997  12249  76328 --:--:-- --:--:-- --:--:-- 83083
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-HistogramTempoResposta","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Histograma-Job:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-Histograma-Job","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1212  100   152  100  1060  11073  77220 --:--:-- --:--:-- --:--:-- 81538
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-HistogramaCountDbPorModulo:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1014  100   164  100   850  18809  97488 --:--:-- --:--:-- --:--:--  103k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-HistogramaCountDbPorModulo","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-HistogramaPorModulo-Ultimos7Dias:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1134  100   170  100   964  11488  65143 --:--:-- --:--:-- --:--:-- 68857
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-HistogramaPorModulo-Ultimos7Dias","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-HistogramaPorModulo:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1089  100   157  100   932  12102  71847 --:--:-- --:--:-- --:--:-- 77666
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-HistogramaPorModulo","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-HistogramaSplitEnv:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1408  100   156  100  1252  11578  92926 --:--:-- --:--:-- --:--:-- 96307
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-HistogramaSplitEnv","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Lentidoes:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-Lentidoes","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   582  100   147  100   435  12835  37981 --:--:-- --:--:-- --:--:-- 39545
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-MediaTempoResposta:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   600  100   156  100   444  12148  34576 --:--:-- --:--:-- --:--:-- 37000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-MediaTempoResposta","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-P90TempoResposta:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   622  100   154  100   468  11888  36127 --:--:-- --:--:-- --:--:-- 39000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-P90TempoResposta","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PaginasVisitadas:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   571  100   154  100   417  17727  48002 --:--:-- --:--:-- --:--:-- 52125
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-PaginasVisitadas","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PercentilesTempoResposta:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1213  100   162  100  1051  10926  70884 --:--:-- --:--:-- --:--:-- 75071
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-PercentilesTempoResposta","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Pie-Modules:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-Pie-Modules","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   924  100   149  100   775  16995  88399 --:--:-- --:--:-- --:--:-- 96875
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-Pie-SumExecutionTimePerUser:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   814  100   165  100   649  13395  52687 --:--:-- --:--:-- --:--:-- 54083
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Pie-SumExecutionTimePerUser","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-Pie-Username:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   785  100   150  100   635  11279  47747 --:--:-- --:--:-- --:--:-- 48846
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Pie-Username","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieChart-CountDB:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   955  100   154  100   801  10970  57059 --:--:-- --:--:-- --:--:-- 61615{"_index":".kibana","_type":"visualization","_id":"Request-PieChart-CountDB","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieChart-ExecutionTime:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   961  100   160  100   801  10240  51264 --:--:-- --:--:-- --:--:-- 53400
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-PieChart-ExecutionTime","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieChart-ReqCount:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   802  100   155  100   {"_index":".kibana","_type":"visualization","_id":"Request-PieChart-ReqCount","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}647  10486  43772 --:--:-- --:--:-- --:--:-- 46214
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieChart-TimeCPU:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   955  100   154  100   801   9686  50383 --:--:-- --:--:-- --:--:-- 53400
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-PieChart-TimeCPU","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieChart-TimeDB:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   951  100   153  100   798   9199  47979 --:--:-- --:--:-- --:--:-- 49875
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-PieChart-TimeDB","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-PieModuleNameTag:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1038  100   154  100   884  11464  65808 --:--:-- --:-{"_index":".kibana","_type":"visualization","_id":"Request-PieModuleNameTag","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}-:-- --:--:-- 68000
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-Status-Code:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   901  100   149  100   752  17146  86536 --:--:-- --:--:-- --:--:-- 94000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-Status-Code","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TempoReposta-(REPORT-VALE)-Average:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-TempoReposta-(REPORT-VALE)-Average","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   679  100   172  100   507  11870  34989 --:--:-- --:--:-- --:--:-- 36214
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-TempoReposta-(REPORT-VALE)-Servers:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1280  100   172  100  1108  10103  65084 --:--:-- --:--:-- --:--:-- 69250
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TempoReposta-(REPORT-VALE)-Servers","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TempoReposta-(REPORT-VALE)-Servico:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1283  100   172  100  1111  13076  84467 --:--:-- --:--:-- --:--:-- 85461
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TempoReposta-(REPORT-VALE)-Servico","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TempoReposta-(REPORT-VALE):
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1108  100   164  100   944  13054  75141 --:--:-- --:--:-- --:--:-- 78666
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TempoReposta-(REPORT-VALE)","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TempoReposta:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1110  100   150  100   960  12455  79714 --:--:-- --:--:-- --:--:-- 87272
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TempoReposta","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TopPages:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   754  100   146  100   608  11584  48242 --:--:-- --:--:-- --:--:-- 50666
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TopPages","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TopPercentiles:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   882  100   152  100   730  11981  57543 --:--:-- --:--:-- --:--:-- 60833
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TopPercentiles","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-TopTagPercentiles:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   887  100   155  100   732  12516  59108 --:--:-- --:--:-- --:--:-- 61000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-TopTagPercentiles","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Request-UniqueSession:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Request-UniqueSession","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   594  100   151  100   443  12445  36511 --:--:-- --:--:-- --:--:-- 36916
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Request-UniqueUsername:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   595  100   152  100   443  12598  36717 --:--:-- --:--:-- --:--:-- 40272
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Request-UniqueUsername","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Requests-Environment-Pie:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   769  100   154  100   615  11522  46015 --:--:-- --:--:-- --:--:-- 47307
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Requests-Environment-Pie","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Sessoes-Abertas:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1788  100   145  100  1643  15330   169k --:--:-- --:--:-- --:--:--  178k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Sessoes-Abertas","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Status-Movimentacao-Job:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1367  100   153  100  1214  11716  92962 --:--:-- --:--:-- --:--:--   98k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Status-Movimentacao-Job","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Status-Movimentacao-Jov:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   951  100   153  100   798  13833  72151 --:--:-- --:--:-- --:--:-- 79800
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Status-Movimentacao-Jov","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Tempo-Execução-Agregado-Jobs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1158  100   168  100   990  18870   1{"_index":".kibana","_type":"visualization","_id":"Tempo-Execuￃﾧￃﾣo-Agregado-Jobs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}08k --:--:-- --:--:-- --:--:--  120k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Tempo-Medio-Execucao-de-Jobs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1061  100   158  100   903   8755  50038 --:--:-- --:--:-- --:--:-- 53117{"_index":".kibana","_type":"visualization","_id":"Tempo-Medio-Execucao-de-Jobs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Tempo-Medio-Execucao:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Tempo-Medio-Execucao","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   991  100   150  100   841   8700  48781 --:--:-- --:--:-- --:--:-- 49470
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Tempo-THP:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"Tempo-THP","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1915  100   139  100  1776   8826   110k --:--:-- --:--:-- --:--:--  115k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization Tempo-Total-Execucao-de-Jobs:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1062  100   158  100   904  12240  70034 --:--:-- --:--:-- --:--:-- 75333
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Tempo-Total-Execucao-de-Jobs","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Tempos-de-INSERT-slash-UPDATE-slash-DELETE:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1164  100   172  100   992  11825  68202 --:--:-- --:--:-- --:--:-- 70857
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Tempos-de-INSERT-slash-UPDATE-slash-DELETE","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization TotalMovimentacoesExecutadasJob:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   972  100   161  100   811   7038  35453 --:--:-- --:--:-- --:--:-- 36863
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"TotalMovimentacoesExecutadasJob","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization TotalMovimentacoesExecutadasJobComFalha:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   937  100   169  100   768  15734  71501 --:--:-- --:--:-- --:--:-- 76800
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"TotalMovimentacoesExecutadasJobComFalha","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization TotalMovimentacoesExecutadasJobComSucesso:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   901  100   171  100   730  12472  53245 --:--:-- --:--:-- --:--:-- 56153
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"TotalMovimentacoesExecutadasJobComSucesso","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Update-Trem:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1632  100   141  100  1491  10812   111k --:--:-- --:--:-- --:--:--  121k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Update-Trem","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization Updates-VCV-vs-Tela:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1021  100   149  100   872  11571  67717 --:--:-- --:--:-- --:--:-- 72666
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"Updates-VCV-vs-Tela","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization ValeAuditoria-Histograma:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1247  100   154  100  1093  12442  88308 --:--:-- --:--:-- --:--:-- 91083
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"ValeAuditoria-Histograma","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization ValeAuditoria-Pie-Chart:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   923  100   153  100   770  11895  59866 --:--:-- --:--:-- --:--:-- 64166
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"ValeAuditoria-Pie-Chart","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization andremp-Confirmação-movimentação:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1176  100   182  100   994  18666    99k --:--:-- --:--:-- --:--:--  107k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"andremp-Confirmaￃﾧￃﾣo-movimentaￃﾧￃﾣo","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization elastalert_status-Histogram-alert_sent_count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1009  100   174  100   835  14457  69380 --:--:-- --:--:-- --:--:-- 75909
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"elastalert_status-Histogram-alert_sent_count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization elastalert_status-Histogram-count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1114  100   163  100   951  12336  71974 --:--:-- --:--:-- --:--:-- 73153
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"elastalert_status-Histogram-count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization elastalert_status-Metric-AlertSentCount:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   619  100   169  100   450  13012  34647 --:--:-- --:--:-- --:--:-- 37500
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"elastalert_status-Metric-AlertSentCount","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization elastalert_status-Metric-totalCount:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"elastalert_status-Metric-totalCount","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   597  100   165  100   432   8850  23173 --:--:-- --:--:-- --:--:-- 24000
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization elastalert_status-PieChart-alert_sent_count:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   814  100   173  100   641  12851  47619 --:--:-- --:--:-- --:--:-- 49307
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"elastalert_status-PieChart-alert_sent_count","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization inbound-job-5:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1133  100   143  100   990  13652  94519 --:--:-- --:--:-- --:--:-- 99000
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"inbound-job-5","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization inbound-top-5:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"inbound-top-5","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1117  100   143  100   974  13783  93879 --:--:-- --:--:-- --:--:-- 97400
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization integracoes-erros-metric-today:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   536  100   160  100   376  12971  30482 --:--:-- --:--:-- --:--:-- 31333
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"visualization","_id":"integracoes-erros-metric-today","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading visualization visualization-integracao-outbound-top10:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"visualization-integracao-outbound-top10","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1894  100   169  100  1725  15856   158k --:--:-- --:--:-- --:--:--  168k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization visualization-integracao-outbound-top20:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"visualization-integracao-outbound-top20","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100   965  100   169  100   796  13227  62304 --:--:-- --:--:-- --:--:-- 66333
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading visualization visualization-tela-tempo:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"visualization","_id":"visualization-tela-tempo","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100  1107  100   154  100   953  12401  76743 --:--:-- --:--:-- --:--:-- 79416
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading dashboard Database-Lentidoes:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1278  100   144  100  1134   8065  63515 --:--:-- --:--:-- --:--:-- 66705
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Database-Lentidoes","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Database-Usage:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1604  100   140  100  1464  11140   113k --:--:-- --:--:-- --:--:--  119k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Database-Usage","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Logging-Erros:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  2105  100   139  100  1966  12191   168k --:--:-- --:--:-- --:--:--  174k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Logging-Erros","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Logging:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1164  100   133  10{"_index":".kibana","_type":"dashboard","_id":"Logging","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}0  1031   8774  68021 --:--:-- --:--:-- --:--:-- 68733
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading dashboard Logtrans:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1190  100   134  100  1056  10282  81031 --:--:-- --:--:-- --:--:-- 81230100  1190  100   134  100  1056  10239  80696 --:--:-- --:--:-- --:--:-- 75428
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Logtrans","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Metrics-JVM:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1577  100   137  100  1440  12028   123k --:--:-- --:--:-- --:--:--  127k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Metrics-JVM","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Metrics:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   858  100   133  100   725  10904  59440 --:--:-- --:--:-- --:--:-- 60416
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Metrics","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Performance:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  2515  100   137  100  2378   7171   121k --:--:-- --:--:-- --:--:--  122k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Performance","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Request-Browsers:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   944  100   142  100   802  15107  85328 --:--:-- --:--:-- --:--:-- 89111
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Request-Browsers","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard Request:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  2555  100   133  100  2422   8899   158k --:--:-- --:--:-- --:--:--  168k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"Request","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard RequestTrace:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1703  100   138  100  1565  10704   118k --:--:-- --:--:-- --:--:--  127k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"RequestTrace","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard UserErrors:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1850  100   136  100  1714   7835  98744 --:--:-- --:--:-- --:--:--   98k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"UserErrors","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard UserResposeTime:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1100  100   141  100   959  13225  89954 --:--:-- --:--:-- --:--:-- 95900
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"UserResposeTime","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading dashboard WitixAlertsStatus:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  1239  100   143  100  1096  12154  93157 --:--:-- --:--:-- --:--:-- 99636
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"dashboard","_id":"WitixAlertsStatus","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading index pattern database-*:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  2602  100   140  100  2462   9171   157k --:--:-- --:--:-- --:--:--  160k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"index-pattern","_id":"database-*","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading index pattern elastalert_status:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 10351  100   147  100 10204  12541   850k --:--:-- --:--:-- --:--:--  905k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"index-pattern","_id":"elastalert_status","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading index pattern logging-*:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100{"_index":".kibana","_type":"index-pattern","_id":"logging-*","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}  3696  100   139  100  3557  14542   363k --:--:-- --:--:-- --:--:--  385k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Loading index pattern logtrans-*:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  8413  100   140  100  8273   7980   460k --:--:-- --:--:-- --:--:--  475k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"index-pattern","_id":"logtrans-*","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading index pattern metrics-*:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  4660  100   139  100  4521   6037   191k --:--:-- --:--:-- --:--:--  200k
+[32mwitix-kibana_1         |[0m {"_index":".kibana","_type":"index-pattern","_id":"metrics-*","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}
+[32mwitix-kibana_1         |[0m Loading index pattern request-*:
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+[32mwitix-kibana_1         |[0m   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"_index":".kibana","_type":"index-pattern","_id":"request-*","_version":4,"_shards":{"total":2,"successful":1,"failed":0},"created":false}100 12302  100   139  100 12163   4628   395k --:--:-- --:--:-- --:--:--  409k
+[32mwitix-kibana_1         |[0m 
+[32mwitix-kibana_1         |[0m Host -> http://witix-elasticsearch:9200
+[32mwitix-kibana_1         |[0m   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[32mwitix-kibana_1         |[0m                                  Dload  Upload   Total   Spent    Left  Speed
+Gracefully stopping... (press Ctrl+C again to force)

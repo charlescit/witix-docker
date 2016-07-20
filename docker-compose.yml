@@ -1,5 +1,11 @@
 version: '2'
 services:
+    witix-nagios:
+       build: Docker-Nagios
+       networks:
+         - witix    
+       ports:
+         - "8081:80"
     witix-elasticsearch:
         build: elasticsearch/
         ports:

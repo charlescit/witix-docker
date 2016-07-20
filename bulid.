@@ -1,0 +1,357 @@
+Step 1 : FROM ubuntu:16.04
+ ---> cf62323fa025
+Step 2 : MAINTAINER Jason Rivers <jason@jasonrivers.co.uk>
+ ---> Using cache
+ ---> d5ec912c3f05
+Step 3 : ENV NAGIOS_HOME /opt/nagios
+ ---> Using cache
+ ---> fff7cc4fe72a
+Step 4 : ENV NAGIOS_USER nagios
+ ---> Using cache
+ ---> 3bec13b698d3
+Step 5 : ENV NAGIOS_GROUP nagios
+ ---> Using cache
+ ---> f735d1b35f4e
+Step 6 : ENV NAGIOS_CMDUSER nagios
+ ---> Using cache
+ ---> 2f1e1efee0d6
+Step 7 : ENV NAGIOS_CMDGROUP nagios
+ ---> Using cache
+ ---> de2785af1acd
+Step 8 : ENV NAGIOSADMIN_USER nagiosadmin
+ ---> Using cache
+ ---> 80cd78263c79
+Step 9 : ENV NAGIOSADMIN_PASS nagios
+ ---> Using cache
+ ---> b0169ed765fa
+Step 10 : ENV APACHE_RUN_USER nagios
+ ---> Using cache
+ ---> beb6a19eb78c
+Step 11 : ENV APACHE_RUN_GROUP nagios
+ ---> Using cache
+ ---> c409c90e1a40
+Step 12 : ENV NAGIOS_TIMEZONE UTC
+ ---> Using cache
+ ---> 9241df2a0bb5
+Step 13 : ENV DEBIAN_FRONTEND noninteractive
+ ---> Using cache
+ ---> 1cb88b262061
+Step 14 : ENV NG_NAGIOS_CONFIG_FILE ${NAGIOS_HOME}/etc/nagios.cfg
+ ---> Using cache
+ ---> 4c0246a7e301
+Step 15 : ENV NG_CGI_DIR ${NAGIOS_HOME}/sbin
+ ---> Using cache
+ ---> 48a249785279
+Step 16 : ENV NG_WWW_DIR ${NAGIOS_HOME}/share/nagiosgraph
+ ---> Using cache
+ ---> 021003ccca57
+Step 17 : ENV NG_CGI_URL /cgi-bin
+ ---> Using cache
+ ---> e2abababb15f
+Step 18 : RUN sed -i 's/universe/universe multiverse/' /etc/apt/sources.list	;	apt-get update && apt-get install -y						iputils-ping								netcat									build-essential								automake								autoconf								gettext									m4									gperf									snmp									snmpd									snmp-mibs-downloader							php-cli									php-gd									libgd2-xpm-dev								apache2									apache2-utils								libapache2-mod-php							runit									unzip									bc									postfix									bsd-mailx								libnet-snmp-perl							git									libssl-dev								libcgi-pm-perl								librrds-perl								libgd-gd2-perl								libnagios-object-perl							fping									libfreeradius-client-dev						libnet-snmp-perl							libnet-xmpp-perl							parallel					&&			apt-get clean
+ ---> Using cache
+ ---> e63ab512366e
+Step 19 : RUN ( egrep -i "^${NAGIOS_GROUP}"    /etc/group || groupadd $NAGIOS_GROUP    )				&&		( egrep -i "^${NAGIOS_CMDGROUP}" /etc/group || groupadd $NAGIOS_CMDGROUP )
+ ---> Using cache
+ ---> 0ec133328d1b
+Step 20 : RUN ( id -u $NAGIOS_USER    || useradd --system -d $NAGIOS_HOME -g $NAGIOS_GROUP    $NAGIOS_USER    )	&&		( id -u $NAGIOS_CMDUSER || useradd --system -d $NAGIOS_HOME -g $NAGIOS_CMDGROUP $NAGIOS_CMDUSER )
+ ---> Using cache
+ ---> 59e5ffd219c6
+Step 21 : RUN cd /tmp							&&		git clone https://github.com/multiplay/qstat.git	&&		cd qstat						&&		./autogen.sh						&&		./configure						&&		make							&&		make install						&&		make clean
+ ---> Using cache
+ ---> a4a5faadb466
+Step 22 : RUN cd /tmp							&&		git clone https://github.com/NagiosEnterprises/nagioscore.git		&&		cd nagioscore						&&		git checkout tags/nagios-4.1.1				&&		./configure									--prefix=${NAGIOS_HOME}							--exec-prefix=${NAGIOS_HOME}						--enable-event-broker							--with-nagios-command-user=${NAGIOS_CMDUSER}				--with-command-group=${NAGIOS_CMDGROUP}					--with-nagios-user=${NAGIOS_USER}					--with-nagios-group=${NAGIOS_GROUP}		&&		make all						&&		make install						&&		make install-config					&&		make install-commandmode				&&		cp sample-config/httpd.conf /etc/apache2/conf-available/nagios.conf	&&		ln -s /etc/apache2/conf-available/nagios.conf /etc/apache2/conf-enabled/nagios.conf		&&		make clean
+ ---> Using cache
+ ---> 5198b525939d
+Step 23 : ADD patches/check_game.patch /tmp/
+ ---> Using cache
+ ---> dcd57a3b5699
+Step 24 : RUN cd /tmp							&&		git clone https://github.com/nagios-plugins/nagios-plugins.git		&&		cd nagios-plugins					&&		git checkout tags/release-2.1.1				&&		patch ./plugins/check_game.c /tmp/check_game.patch	&&		./tools/setup						&&		./configure									--prefix=${NAGIOS_HOME}				&&		make							&&		make install						&&		make clean
+ ---> Using cache
+ ---> 2bb6a45d11fb
+Step 25 : RUN cd /tmp							&&		git clone https://github.com/NagiosEnterprises/nrpe.git	&&		cd nrpe							&&		git checkout tags/nrpe-2-15				&&		./configure									--with-ssl=/usr/bin/openssl						--with-ssl-lib=/usr/lib/x86_64-linux-gnu	&&		make check_nrpe						&&		cp src/check_nrpe ${NAGIOS_HOME}/libexec/		&&		make clean
+ ---> Using cache
+ ---> 00731733117a
+Step 26 : RUN cd /tmp											&&		git clone http://git.code.sf.net/p/nagiosgraph/git nagiosgraph				&&		cd nagiosgraph										&&		./install.pl --install												--prefix /opt/nagiosgraph										--nagios-user ${NAGIOS_USER}										--www-user ${NAGIOS_USER}										--nagios-perfdata-file ${NAGIOS_HOME}/var/perfdata.log							--nagios-cgi-url /cgi-bin							&&		cp share/nagiosgraph.ssi ${NAGIOS_HOME}/share/ssi/common-header.ssi
+ ---> Using cache
+ ---> 86173812904b
+Step 27 : RUN cd /opt &&			git clone https://github.com/willixix/WL-NagiosPlugins.git	WL-Nagios-Plugins	&&		git clone https://github.com/JasonRivers/nagios-plugins.git	JR-Nagios-Plugins	&&		git clone https://github.com/justintime/nagios-plugins.git      JE-Nagios-Plugins       &&      	chmod +x /opt/WL-Nagios-Plugins/check*                                                  &&      	chmod +x /opt/JE-Nagios-Plugins/check_mem/check_mem.pl                                  &&      	cp /opt/JE-Nagios-Plugins/check_mem/check_mem.pl /opt/nagios/libexec/                   &&      	cp /opt/nagios/libexec/utils.sh /opt/JR-Nagios-Plugins/
+ ---> Using cache
+ ---> 497f80079c4c
+Step 28 : RUN sed -i.bak 's/.*\=www\-data//g' /etc/apache2/envvars
+ ---> Using cache
+ ---> 5cff0abf9b61
+Step 29 : RUN export DOC_ROOT="DocumentRoot $(echo $NAGIOS_HOME/share)"					&&		sed -i "s,DocumentRoot.*,$DOC_ROOT," /etc/apache2/sites-enabled/000-default.conf		&&		sed -i "s,</VirtualHost>,<IfDefine ENABLE_USR_LIB_CGI_BIN>\nScriptAlias /cgi-bin/ /opt/nagios/sbin/\n</IfDefine>\n</VirtualHost>," /etc/apache2/sites-enabled/000-default.conf	&&		ln -s /etc/apache2/mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+ ---> Using cache
+ ---> 117f39121c85
+Step 30 : RUN mkdir -p /usr/share/snmp/mibs								&&		mkdir -p ${NAGIOS_HOME}/etc/conf.d							&&		mkdir -p ${NAGIOS_HOME}/etc/monitor							&&		mkdir -p ${NAGIOS_HOME}/.ssh								&&		chown ${NAGIOS_USER}:${NAGIOS_GROUP} ${NAGIOS_HOME}/.ssh				&&		chmod 700 ${NAGIOS_HOME}/.ssh								&&		chmod 0755 /usr/share/snmp/mibs								&&		touch /usr/share/snmp/mibs/.foo								&&		ln -s /usr/share/snmp/mibs ${NAGIOS_HOME}/libexec/mibs					&&		ln -s ${NAGIOS_HOME}/bin/nagios /usr/local/bin/nagios					&&		echo "use_timezone=$NAGIOS_TIMEZONE" >> ${NAGIOS_HOME}/etc/nagios.cfg			&&		echo "SetEnv TZ \"${NAGIOS_TIMEZONE}\"" >> /etc/apache2/conf-enabled/nagios.conf	&&		echo "cfg_dir=${NAGIOS_HOME}/etc/conf.d" >> ${NAGIOS_HOME}/etc/nagios.cfg		&&		echo "cfg_dir=${NAGIOS_HOME}/etc/monitor" >> ${NAGIOS_HOME}/etc/nagios.cfg		&&		download-mibs && echo "mibs +ALL" > /etc/snmp/snmp.conf
+ ---> Using cache
+ ---> adec4e0e0720
+Step 31 : RUN sed -i 's,/bin/mail,/usr/bin/mail,' /opt/nagios/etc/objects/commands.cfg		&&		sed -i 's,/usr/usr,/usr,'           /opt/nagios/etc/objects/commands.cfg
+ ---> Using cache
+ ---> c38c7aa5ab88
+Step 32 : RUN cp /etc/services /var/spool/postfix/etc/
+ ---> Using cache
+ ---> 4f9bf9360990
+Step 33 : RUN rm -rf /etc/sv/getty-5
+ ---> Using cache
+ ---> 03e71dd0fd97
+Step 34 : ADD nagios/nagios.cfg /opt/nagios/etc/nagios.cfg
+ ---> Using cache
+ ---> d3d7b870816d
+Step 35 : ADD nagios/cgi.cfg /opt/nagios/etc/cgi.cfg
+ ---> Using cache
+ ---> a66dfe394d8c
+Step 36 : ADD nagios/templates.cfg /opt/nagios/etc/objects/templates.cfg
+ ---> Using cache
+ ---> 8f09bab19db6
+Step 37 : ADD nagios/commands.cfg /opt/nagios/etc/objects/commands.cfg
+ ---> Using cache
+ ---> 85c4ab3a753a
+Step 38 : ADD nagios/rules.cfg /opt/nagios/etc/objects/rules.cfg
+ ---> Using cache
+ ---> 2e55b3db3ef6
+Step 39 : ADD nagios.init /etc/sv/nagios/run
+ ---> Using cache
+ ---> 306344154122
+Step 40 : ADD apache.init /etc/sv/apache/run
+ ---> Using cache
+ ---> 31692f10f46c
+Step 41 : ADD postfix.init /etc/sv/postfix/run
+ ---> Using cache
+ ---> 91fce979341c
+Step 42 : ADD start.sh /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> f7a2de4a98ae
+Step 43 : RUN chmod +x /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> 4fb4961f299a
+Step 44 : RUN ln -s /etc/sv/* /etc/service
+ ---> Using cache
+ ---> 9e18da8f4802
+Step 45 : ENV APACHE_LOCK_DIR /var/run
+ ---> Using cache
+ ---> 545506cba82d
+Step 46 : ENV APACHE_LOG_DIR /var/log/apache2
+ ---> Using cache
+ ---> c5a3b04b65ef
+Step 47 : EXPOSE 80
+ ---> Using cache
+ ---> 8b3e696032fc
+Step 48 : VOLUME "/opt/nagios/var" "/opt/nagios/etc" "/opt/nagios/libexec" "/var/log/apache2" "/usr/share/snmp/mibs" "/opt/Custom-Nagios-Plugins"
+ ---> Using cache
+ ---> b99b221712db
+Step 49 : CMD /usr/local/bin/start_nagios
+ ---> Using cache
+ ---> 52bd16d1fe4c
+Successfully built 52bd16d1fe4c
+Step 1 : FROM elasticsearch:2.3.1
+ ---> 68577e26e345
+Step 2 : RUN ./bin/plugin install mobz/elasticsearch-head
+ ---> Using cache
+ ---> 6c6a6c24692f
+Successfully built 6c6a6c24692f
+Step 1 : FROM debian:jessie
+ ---> 1b088884749b
+Step 2 : MAINTAINER mlacerda@ciandt.com
+ ---> Using cache
+ ---> a9a976d09b9f
+Step 3 : ENV SET_CONTAINER_TIMEZONE false
+ ---> Using cache
+ ---> a408a74c5687
+Step 4 : ENV CONTAINER_TIMEZONE America/Los_Angeles
+ ---> Using cache
+ ---> ed51e465024d
+Step 5 : ENV ELASTALERT_VERSION 0.0.75
+ ---> Using cache
+ ---> cf69d821afe4
+Step 6 : ENV ELASTALERT_URL https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz
+ ---> Using cache
+ ---> 36dc619e7949
+Step 7 : ENV ELASTALERT_HOME /opt/elastalert
+ ---> Using cache
+ ---> 382fad3391b1
+Step 8 : ENV RULES_DIRECTORY /opt/elastalert/rules
+ ---> Using cache
+ ---> 541e82eb2d46
+Step 9 : ENV ELASTICSEARCH_URL http://witix-elasticsearch:9200
+ ---> Using cache
+ ---> 59d240d5aea0
+Step 10 : ENV ELASTICSEARCH_HOST http://witix-elasticsearch
+ ---> Using cache
+ ---> 331462cfd869
+Step 11 : ENV ELASTICSEARCH_PORT 9200
+ ---> Using cache
+ ---> 85ac0a14886c
+Step 12 : ENV ELASTICSEARCH_USERNAME ""
+ ---> Using cache
+ ---> d5d2cf9c5019
+Step 13 : ENV ELASTICSEARCH_PASSWORD ""
+ ---> Using cache
+ ---> 309670169edd
+Step 14 : RUN apt-get update
+ ---> Using cache
+ ---> ebe913bd9efa
+Step 15 : RUN apt-get -y install curl
+ ---> Using cache
+ ---> 3534c7354ce9
+Step 16 : RUN apt-get install tar python-dev build-essential tzdata -y
+ ---> Using cache
+ ---> 9776ec5b10d2
+Step 17 : RUN curl -Lo get-pip.py https://bootstrap.pypa.io/get-pip.py &&     python get-pip.py &&     rm get-pip.py
+ ---> Using cache
+ ---> 5a34e3ce71b2
+Step 18 : RUN mkdir -p /opt/elastalert
+ ---> Using cache
+ ---> 2a7bbec72a5b
+Step 19 : RUN curl -Lo elastalert.tar.gz ${ELASTALERT_URL} &&     tar xvf *.tar.gz -C ${ELASTALERT_HOME} --strip-components 1 &&     rm *.tar.gz
+ ---> Using cache
+ ---> 1785b42ad167
+Step 20 : WORKDIR /opt/elastalert
+ ---> Using cache
+ ---> ec1a48ea94d7
+Step 21 : RUN mkdir rules
+ ---> Using cache
+ ---> 885debd40b65
+Step 22 : COPY ./conf/config.yaml /opt/elastalert/
+ ---> Using cache
+ ---> bb70f84f17ed
+Step 23 : COPY ./conf/rules/*.yaml /opt/elastalert/rules/
+ ---> Using cache
+ ---> d7a4f544c48c
+Step 24 : RUN python setup.py install &&     pip install -e .
+ ---> Using cache
+ ---> 3522d08918df
+Step 25 : COPY ./init-elastalert.sh /init-elastalert.sh
+ ---> Using cache
+ ---> 31c68ccadaa9
+Step 26 : RUN chmod +x /init-elastalert.sh
+ ---> Using cache
+ ---> 77b24040ffad
+Step 27 : RUN sed -i 's/\r$//' /init-elastalert.sh
+ ---> Using cache
+ ---> 106de0b82f70
+Step 28 : RUN curl -Lo elastalert.tar.gz ${ELASTALERT_URL} &&     tar xvf *.tar.gz -C ${ELASTALERT_HOME} --strip-components 1 &&     rm *.tar.gz
+ ---> Using cache
+ ---> f30ac9db7c94
+Step 29 : CMD /init-elastalert.sh
+ ---> Using cache
+ ---> 285473908e6e
+Successfully built 285473908e6e
+Step 1 : FROM nginx
+ ---> 0d409d33b27e
+Step 2 : COPY nginx.conf /etc/nginx/nginx.conf
+ ---> Using cache
+ ---> 826e13ee0430
+Step 3 : COPY .htpasswd /etc/nginx/.htpasswd
+ ---> Using cache
+ ---> f03260721241
+Successfully built f03260721241
+Step 1 : FROM kibana:4.5
+ ---> a56105e8ee1d
+Step 2 : MAINTAINER mlacerda@ciandt.com
+ ---> Using cache
+ ---> 322ef12e4b61
+Step 3 : RUN apt-get update
+ ---> Using cache
+ ---> b33b1089949e
+Step 4 : RUN apt-get -y install curl
+ ---> Using cache
+ ---> 0ae85e034fc1
+Step 5 : COPY ./conf/kibana.yml /opt/kibana/config/kibana.yml
+ ---> Using cache
+ ---> 61532e167554
+Step 6 : RUN kibana plugin --install elastic/timelion
+ ---> Using cache
+ ---> daa4003bae95
+Step 7 : RUN kibana plugin --install elastic/sense
+ ---> Using cache
+ ---> 16a43802ae57
+Step 8 : COPY dashboards /tmp/dashboards/
+ ---> Using cache
+ ---> d1b4951711f4
+Step 9 : RUN chmod +x /tmp/dashboards/config_dashboards.sh
+ ---> Using cache
+ ---> d715afc5d842
+Step 10 : RUN sed -i -e 's/\r$//' /tmp/dashboards/config_dashboards.sh
+ ---> Using cache
+ ---> cd2b21ef51b5
+Step 11 : COPY templates /tmp/templates
+ ---> Using cache
+ ---> 8896dda8af2f
+Step 12 : RUN chmod +x /tmp/templates/config_templates.sh
+ ---> Using cache
+ ---> 13f2c7e1ad62
+Step 13 : RUN sed -i -e 's/\r$//' /tmp/templates/config_templates.sh
+ ---> Using cache
+ ---> 382ba406d8f4
+Step 14 : COPY docker-witix-entrypoint.sh /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 697281b1512f
+Step 15 : RUN chmod +x /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> e9396c36c2f9
+Step 16 : RUN sed -i -e 's/\r$//' /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 76b73c477902
+Step 17 : COPY check_elastic.sh /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 3e8c14777479
+Step 18 : RUN chmod +x /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 34e034921ceb
+Step 19 : RUN sed -i -e 's/\r$//' /tmp/check_elastic.sh
+ ---> Using cache
+ ---> 67bd6c9cc8b4
+Step 20 : COPY witix-console.svg /opt/kibana/optimize/bundles/src/ui/public/images/kibana.svg
+ ---> Using cache
+ ---> 83b604bab1f5
+Step 21 : RUN chmod o+w /opt/kibana/optimize/.babelcache.json
+ ---> Using cache
+ ---> 3aa0b3433029
+Step 22 : ENTRYPOINT /tmp/docker-witix-entrypoint.sh
+ ---> Using cache
+ ---> 5163f53ad2f5
+Step 23 : CMD kibana
+ ---> Using cache
+ ---> b2f86e9d4e23
+Successfully built b2f86e9d4e23
+Attaching to witixdocker_witix-elasticsearch_1, witixdocker_witix-kibana_1, witixdocker_witix-elastalert_1, witixdocker_witix-nginx_1, witixdocker_witix-nagios_1
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:01,431][WARN ][bootstrap                ] unable to install syscall filter: seccomp unavailable: your kernel is buggy and you should upgrade
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:01,598][INFO ][node                     ] [Namor the Sub-Mariner] version[2.3.1], pid[1], build[bd98092/2016-04-04T12:25:05Z]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:01,598][INFO ][node                     ] [Namor the Sub-Mariner] initializing ...
+[33mwitix-kibana_1         |[0m env http://witix-elasticsearch:9200
+[33mwitix-kibana_1         |[0m Elastic server==> http://witix-elasticsearch:9200
+[33mwitix-kibana_1         |[0m Status do Servidor Elastic => -- off line --
+[32mwitix-elastalert_1     |[0m Starting Alerting
+[32mwitix-elastalert_1     |[0m Waiting for Elasticsearch to startup
+[32mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+[31mwitix-nagios_1         |[0m Started runsvdir, PID is 7
+[31mwitix-nagios_1         |[0m 
+[31mwitix-nagios_1         |[0m Nagios Core 4.1.1
+[31mwitix-nagios_1         |[0m Copyright (c) 2009-present Nagios Core Development Team and Community Contributors
+[31mwitix-nagios_1         |[0m Copyright (c) 1999-2009 Ethan Galstad
+[31mwitix-nagios_1         |[0m Last Modified: 08-19-2015
+[31mwitix-nagios_1         |[0m License: GPL
+[31mwitix-nagios_1         |[0m 
+[31mwitix-nagios_1         |[0m Website: https://www.nagios.org
+[31mwitix-nagios_1         |[0m Nagios 4.1.1 starting... (PID=14)
+[31mwitix-nagios_1         |[0m Local time is Tue Jul 19 00:48:01 UTC 2016
+[31mwitix-nagios_1         |[0m nerd: Channel hostchecks registered successfully
+[31mwitix-nagios_1         |[0m nerd: Channel servicechecks registered successfully
+[31mwitix-nagios_1         |[0m nerd: Channel opathchecks registered successfully
+[31mwitix-nagios_1         |[0m nerd: Fully initialized and ready to rock!
+[31mwitix-nagios_1         |[0m wproc: Successfully registered manager as @wproc with query handler
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 17;pid=17
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 19;pid=19
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 20;pid=20
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 21;pid=21
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 22;pid=22
+[31mwitix-nagios_1         |[0m wproc: Registry request: name=Core Worker 18;pid=18
+[31mwitix-nagios_1         |[0m Successfully launched command file worker with pid 24
+[31mwitix-nagios_1         |[0m AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 10.2.2.2. Set the 'ServerName' directive globally to suppress this message
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:02,161][INFO ][plugins                  ] [Namor the Sub-Mariner] modules [reindex, lang-expression, lang-groovy], plugins [head], sites [head]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:02,190][INFO ][env                      ] [Namor the Sub-Mariner] using [1] data paths, mounts [[/usr/share/elasticsearch/data (/dev/sdb1)]], net usable_space [4.2gb], net total_space [19.5gb], spins? [possibly], types [ext4]
+[36mwitix-elasticsearch_1  |[0m [2016-07-19 00:48:02,190][INFO ][env                      ] [Namor the Sub-Mariner] heap size [990.7mb], compressed ordinary object pointers [true]
+[32mwitix-elastalert_1     |[0m WARNING: Trying connect to elasticsearch http://witix-elasticsearch:9200
+Gracefully stopping... (press Ctrl+C again to force)
