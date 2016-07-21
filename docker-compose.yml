@@ -1,7 +1,7 @@
 version: '2'
 services:
     witix-nagios:
-       build: Docker-Nagios
+       build: nagios
        networks:
          - witix    
        ports:
