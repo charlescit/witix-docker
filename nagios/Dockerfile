@@ -173,9 +173,7 @@ ADD nagios/templates.cfg /opt/nagios/etc/objects/templates.cfg
 ADD nagios/commands.cfg /opt/nagios/etc/objects/commands.cfg
 ADD nagios/rules.cfg /opt/nagios/etc/objects/rules.cfg
 
-ADD nagios/kibana.cfg /opt/nagios/etc/objects/kibana.cfg
-ADD nagios/elasticsearch.cfg /opt/nagios/etc/objects/elasticsearch.cfg
-
+ADD nagios/enable/*.cfg /opt/nagios/etc/objects/enable/
 
 ADD plugins/check_elasticsearch_cluster.rb /opt/nagios/libexec/check_elasticsearch_cluster.rb
 RUN chmod 755 /opt/nagios/libexec/check_elasticsearch_cluster.rb
