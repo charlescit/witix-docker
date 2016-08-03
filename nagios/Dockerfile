@@ -54,6 +54,7 @@ RUN	sed -i 's/universe/universe multiverse/' /etc/apt/sources.list	;\
 		libfreeradius-client-dev				\
 		libnet-snmp-perl					\
 		libnet-xmpp-perl					\
+		python-pip						\	
 		parallel					&&	\
 		apt-get clean
 
@@ -166,6 +167,7 @@ RUN	cp /etc/services /var/spool/postfix/etc/
 RUN	rm -rf /etc/sv/getty-5
 
 RUN  gem install elasticsearch
+RUN  pip install nagios-plugin-elasticsearch
 
 ADD nagios/nagios.cfg /opt/nagios/etc/nagios.cfg
 ADD nagios/cgi.cfg /opt/nagios/etc/cgi.cfg

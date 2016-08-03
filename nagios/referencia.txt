@@ -1,0 +1,3 @@
+https://github.com/JasonRivers/Docker-Nagios
+https://github.com/anchor/nagios-plugin-elasticsearch
+http://stackoverflow.com/questions/16188322/how-do-i-use-python-file-in-nagios
