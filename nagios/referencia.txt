@@ -1,3 +1,9 @@
 https://github.com/JasonRivers/Docker-Nagios
 https://github.com/anchor/nagios-plugin-elasticsearch
 http://stackoverflow.com/questions/16188322/how-do-i-use-python-file-in-nagios
+http://www.unixmen.com/send-alerts-nagios-core-using-gmail-yahoo/
+http://blog.iz.inf.br/2015/03/configuracao-de-postfix-relay-atraves.html
+
+
+
+https://linuxsysymas.wordpress.com/2015/05/13/nagios-postfix-gmail/
