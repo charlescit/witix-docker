@@ -55,6 +55,7 @@ RUN	sed -i 's/universe/universe multiverse/' /etc/apt/sources.list	;\
 		libnet-snmp-perl					\
 		libnet-xmpp-perl					\
 		python-pip						\	
+		vim							\
 		parallel					&&	\
 		apt-get clean
 
