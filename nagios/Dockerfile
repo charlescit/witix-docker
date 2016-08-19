@@ -169,6 +169,7 @@ RUN	rm -rf /etc/sv/getty-5
 
 RUN  gem install elasticsearch
 RUN  pip install nagios-plugin-elasticsearch
+RUN  pip install twx.botapi
 
 ADD nagios/nagios.cfg /opt/nagios/etc/nagios.cfg
 ADD nagios/cgi.cfg /opt/nagios/etc/cgi.cfg
@@ -177,6 +178,8 @@ ADD nagios/commands.cfg /opt/nagios/etc/objects/commands.cfg
 ADD nagios/rules.cfg /opt/nagios/etc/objects/rules.cfg
 
 ADD nagios/enable/*.cfg /opt/nagios/etc/objects/enable/
+ADD resource/nagios_telegram.py /usr/local/bin/nagios_telegram.py
+RUN chmod 755 /usr/local/bin/nagios_telegram.py
 
 ADD plugins/check_elasticsearch_cluster.rb /opt/nagios/libexec/check_elasticsearch_cluster.rb
 RUN chmod 755 /opt/nagios/libexec/check_elasticsearch_cluster.rb
